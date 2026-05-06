@@ -5,11 +5,17 @@ export interface Crop {
   droughtTolerance: number; // 1–10: resilience before stress
 }
 
+export interface SoilState {
+  // Dates the user pressed "I watered today". Each adds +40 (capped at 100)
+  // when the simulation walks past that date. Trimmed to last 30 days client-side.
+  wateringDates: string[];
+}
+
 export interface UserPrefs {
   postcode: string;
   crops: string[]; // crop ids
   rootsLocationId?: string; // optional Roots Allotments site
-  lastWateredDate?: string; // ISO date string (YYYY-MM-DD)
+  soil?: SoilState;
 }
 
 export interface WeatherDay {
@@ -21,8 +27,9 @@ export interface WeatherDay {
 }
 
 export interface WeatherData {
+  historical: WeatherDay[]; // past ~7 days, oldest first, real observed weather
   today: WeatherDay;
-  forecast: WeatherDay[]; // next 3–5 days
+  forecast: WeatherDay[];   // next ~5 days, model forecast
 }
 
 export type RecommendationState =
@@ -44,6 +51,7 @@ export interface Recommendation {
   daysUntil: number | null;
   waterOnDate: string | null;
   forecastDays: number;
+  currentMoisture: number; // 0-100, today's snapshot for the most demanding crop
   reason: string;
   cropSuggestions: CropSuggestion[];
 }

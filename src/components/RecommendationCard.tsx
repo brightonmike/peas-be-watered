@@ -1,83 +1,79 @@
-import type { Recommendation, UserPrefs, WeatherData } from "@/lib/types";
-import type { RootsLocation } from "@/lib/roots-locations";
-import Link from "next/link";
-import CropSuggestionList from "@/components/CropSuggestionList";
+import type { Recommendation, UserPrefs } from "@/lib/types";
 import WateredButton from "@/components/WateredButton";
-import RainForecast from "@/components/RainForecast";
 
-const STATE_STYLE = {
-  "water-today":  { bg: "bg-orange-50",  border: "border-orange-200", text: "text-orange-900", sub: "text-orange-700", emoji: "🚿" },
-  "water-soon":   { bg: "bg-sky-50",     border: "border-sky-200",    text: "text-sky-900",    sub: "text-sky-700",    emoji: "💧" },
-  "water-later":  { bg: "bg-blue-50",    border: "border-blue-100",   text: "text-blue-900",   sub: "text-blue-700",   emoji: "📅" },
-  "no-watering":  { bg: "bg-green-50",   border: "border-green-200",  text: "text-green-900",  sub: "text-green-700",  emoji: "✅" },
-  "heat-stress":  { bg: "bg-red-50",     border: "border-red-200",    text: "text-red-900",    sub: "text-red-700",    emoji: "⚠️" },
+const STATE_LABEL = {
+  "water-today": "Today, before sundown",
+  "water-soon":  "Coming up",
+  "water-later": "Later this week",
+  "no-watering": "All quiet",
+  "heat-stress": "Heat warning · today",
 } as const;
 
-function headline(daysUntil: number | null, waterOnDate: string | null): string {
-  if (daysUntil === null) return "No watering needed";
-  if (daysUntil === 0) return "Water today";
-  if (daysUntil === 1) return "Water tomorrow";
+const STATE_DROP = {
+  "water-today": "var(--color-drop-deep)",
+  "water-soon":  "var(--color-drop-deep)",
+  "water-later": "var(--color-drop-deep)",
+  "no-watering": "var(--color-leaf-deep)",
+  "heat-stress": "#C75D3E",
+} as const;
+
+function headline(daysUntil: number | null, waterOnDate: string | null): { lead: string; em: string } {
+  if (daysUntil === null) return { lead: "The soil", em: "is content." };
+  if (daysUntil === 0) return { lead: "The soil", em: "is thirsty." };
+  if (daysUntil === 1) return { lead: "Water", em: "tomorrow." };
   const day = new Date(waterOnDate! + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long" });
-  return `Water on ${day}`;
+  return { lead: "Water on", em: `${day}.` };
 }
 
 export default function RecommendationCard({
   recommendation,
-  weather,
-  postcode,
-  cropCount,
-  rootsLocation,
   prefs,
   wateredToday,
 }: {
   recommendation: Recommendation;
-  weather: WeatherData;
-  postcode: string;
-  cropCount: number;
-  rootsLocation?: RootsLocation;
   prefs: UserPrefs;
   wateredToday: boolean;
 }) {
-  const cfg = STATE_STYLE[recommendation.state];
+  const { state, daysUntil, waterOnDate, reason } = recommendation;
+  const { lead, em } = headline(daysUntil, waterOnDate);
+  const dropColor = STATE_DROP[state];
 
   return (
-    <div>
-      <div className={`rounded-2xl border ${cfg.bg} ${cfg.border} p-8`}>
-        <div className="mb-6">
-          <span className="text-5xl">{cfg.emoji}</span>
-        </div>
-        <h2 className={`text-2xl font-bold ${cfg.text}`}>
-          {headline(recommendation.daysUntil, recommendation.waterOnDate)}
-        </h2>
-        <p className={`mt-3 text-base leading-relaxed ${cfg.sub}`}>
-          {recommendation.reason}
-        </p>
+    <div
+      className="rounded-[18px] border border-black/10 px-5 py-4 backdrop-blur-md shadow-[0_18px_48px_-16px_rgba(20,12,4,0.5)]"
+      style={{ background: "rgba(255, 246, 229, 0.92)" }}
+    >
+      <div className="flex items-start gap-3.5">
+        <svg width="44" height="56" viewBox="0 0 44 56" className="flex-shrink-0">
+          <defs>
+            <linearGradient id="verdict-drop" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-drop)" />
+              <stop offset="100%" stopColor={dropColor} />
+            </linearGradient>
+          </defs>
+          <path d="M22 4 c -8 14 -14 20 -14 30 a 14 14 0 0 0 28 0 c 0 -10 -6 -16 -14 -30 z" fill="url(#verdict-drop)" />
+          <ellipse cx="17" cy="28" rx="3" ry="6" fill="#fff" opacity="0.6" />
+        </svg>
 
-        <RainForecast weather={weather} />
-
-        <div className="mt-5">
-          <WateredButton prefs={prefs} wateredToday={wateredToday} />
-        </div>
-
-        <div className="mt-6 flex items-center justify-between border-t border-current/10 pt-6 text-sm text-zinc-400">
-          <span>
-            {rootsLocation ? (
-              <>{rootsLocation.siteName}, {rootsLocation.city}</>
-            ) : (
-              postcode
-            )}
-            {" "}· {cropCount} {cropCount === 1 ? "crop" : "crops"}
-          </span>
-          <Link
-            href="/setup"
-            className="font-medium text-zinc-500 underline-offset-2 hover:underline"
-          >
-            Edit
-          </Link>
+        <div className="flex-1 min-w-0">
+          <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[var(--color-leaf-deep)]">
+            {STATE_LABEL[state]}
+          </p>
+          <h2 className="font-serif text-[26px] leading-[1.05] mt-0.5 text-[var(--color-ink)] font-medium tracking-tight">
+            {lead}{" "}
+            <span style={{ color: dropColor }} className="italic">
+              {em}
+            </span>
+          </h2>
+          <p className="font-sans text-[13px] text-[var(--color-ink)]/70 mt-1.5 leading-snug">
+            {reason}
+          </p>
         </div>
       </div>
 
-      <CropSuggestionList suggestions={recommendation.cropSuggestions} />
+      <div className="mt-3.5">
+        <WateredButton prefs={prefs} wateredToday={wateredToday} />
+      </div>
     </div>
   );
 }

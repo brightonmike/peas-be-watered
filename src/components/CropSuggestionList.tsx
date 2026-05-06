@@ -1,6 +1,7 @@
 import type { CropSuggestion } from "@/lib/types";
+import { CropIcon } from "@/components/CropIcon";
 
-function formatCropLabel(daysUntil: number | null, waterOnDate: string | null): string {
+function statusLabel(daysUntil: number | null, waterOnDate: string | null): string {
   if (daysUntil === null) return "Fine for now";
   if (daysUntil === 0) return "Water today";
   if (daysUntil === 1) return "Water tomorrow";
@@ -8,18 +9,25 @@ function formatCropLabel(daysUntil: number | null, waterOnDate: string | null): 
   return `Water on ${day}`;
 }
 
-function cropStyle(daysUntil: number | null): string {
-  if (daysUntil === null) return "text-zinc-400";
-  if (daysUntil === 0) return "text-orange-600 font-medium";
-  if (daysUntil <= 2) return "text-sky-600 font-medium";
-  return "text-zinc-500";
+function statusFlavour(daysUntil: number | null): string {
+  if (daysUntil === null) return "happy in the moist layer";
+  if (daysUntil === 0) return "roots reaching past the wet front";
+  if (daysUntil === 1) return "drying out — water tomorrow";
+  return "comfortable but watchful";
 }
 
-function cropEmoji(daysUntil: number | null): string {
-  if (daysUntil === null) return "✅";
-  if (daysUntil === 0) return "🚿";
-  if (daysUntil <= 2) return "💧";
-  return "📅";
+const STATUS_DOT: { color: string; fill: number }[] = [
+  { color: "var(--color-glow)",      fill: 1.00 }, // today
+  { color: "var(--color-drop)",      fill: 0.66 }, // tomorrow
+  { color: "var(--color-drop)",      fill: 0.40 }, // later
+  { color: "var(--color-root-live)", fill: 0.20 }, // fine
+];
+
+function statusStyle(daysUntil: number | null): { color: string; fill: number } {
+  if (daysUntil === null) return STATUS_DOT[3];
+  if (daysUntil === 0)    return STATUS_DOT[0];
+  if (daysUntil <= 2)     return STATUS_DOT[1];
+  return STATUS_DOT[2];
 }
 
 export default function CropSuggestionList({ suggestions }: { suggestions: CropSuggestion[] }) {
@@ -33,23 +41,42 @@ export default function CropSuggestionList({ suggestions }: { suggestions: CropS
   });
 
   return (
-    <div className="mt-6">
-      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-zinc-400">
-        Per crop
+    <div>
+      <p className="font-mono text-[10px] tracking-[0.22em] uppercase text-[var(--color-moss)] mb-3">
+        Feel the rows
       </p>
-      <ul className="divide-y divide-zinc-100 rounded-xl border border-zinc-100 bg-white">
-        {sorted.map((s) => (
-          <li key={s.cropId} className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-zinc-700">{s.cropName}</span>
-            <span className={`flex items-center gap-1.5 text-sm ${cropStyle(s.daysUntil)}`}>
-              <span>{cropEmoji(s.daysUntil)}</span>
-              {formatCropLabel(s.daysUntil, s.waterOnDate)}
-            </span>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-2 text-xs text-zinc-400">
-        Based on forecast conditions — use your judgement.
+      <div className="grid grid-cols-2 gap-2">
+        {sorted.map((s) => {
+          const { color, fill } = statusStyle(s.daysUntil);
+          return (
+            <div
+              key={s.cropId}
+              className="rounded-xl px-3 py-3 flex flex-col gap-2 border border-[var(--color-cream)]/10 bg-[var(--color-cream)]/[0.05]"
+            >
+              <div className="flex items-center gap-2">
+                <CropIcon name={s.cropName} size={24} />
+                <span className="flex-1 font-serif text-[15px] text-[var(--color-cream)] font-medium leading-none truncate">
+                  {s.cropName}
+                </span>
+              </div>
+              {/* Simple fill bar — no numbers, just visual weight */}
+              <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${fill * 100}%`, background: `linear-gradient(90deg, ${color}88, ${color})` }} />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-sans text-[12px] font-medium" style={{ color }}>
+                  {statusLabel(s.daysUntil, s.waterOnDate)}
+                </span>
+                <span className="font-sans text-[11px] italic text-[var(--color-moss)] leading-snug">
+                  {statusFlavour(s.daysUntil)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 font-mono text-[9px] tracking-[0.18em] uppercase text-[var(--color-moss)]/60">
+        Based on forecast — use your judgement.
       </p>
     </div>
   );

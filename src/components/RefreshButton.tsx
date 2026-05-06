@@ -3,6 +3,28 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+function RefreshIcon({ spinning }: { spinning: boolean }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 14 14"
+      aria-hidden="true"
+      className={spinning ? "animate-spin" : undefined}
+    >
+      <path
+        d="M2 7 a 5 5 0 0 1 9 -3 M12 7 a 5 5 0 0 1 -9 3"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path d="M11 1.5 L 11 4 L 8.5 4" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 12.5 L 3 10 L 5.5 10" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function RefreshButton() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -11,9 +33,10 @@ export default function RefreshButton() {
     <button
       onClick={() => startTransition(() => router.refresh())}
       disabled={isPending}
-      className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-600 disabled:opacity-50"
+      className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.18em] uppercase underline underline-offset-[3px] hover:text-[var(--color-cream)] disabled:opacity-50"
     >
-      {isPending ? "Refreshing…" : "Refresh"}
+      <RefreshIcon spinning={isPending} />
+      {isPending ? "Refreshing" : "Refresh"}
     </button>
   );
 }

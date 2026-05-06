@@ -117,9 +117,9 @@ export default function ExplainerModal() {
     <>
       <button
         onClick={open}
-        className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-600"
+        className="font-mono text-[10px] tracking-[0.18em] uppercase text-[var(--color-moss)] underline underline-offset-[3px] hover:text-[var(--color-cream)]"
       >
-        How watering suggestions are determined
+        How this works
       </button>
 
       <dialog
