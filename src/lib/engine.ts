@@ -113,6 +113,104 @@ function formatReason(
   return `${prefix}Next watering needed on ${label}.`;
 }
 
+export interface DayStep {
+  date: string;
+  rainMm: number;
+  tempMaxC: number;
+  windKph: number;
+  humidityPct: number;
+  rainScore: number;
+  evapLoss: number;
+  drain: number;
+  watered: boolean;
+  moistureAfter: number;
+}
+
+export interface MoistureTrace {
+  hero: Crop;
+  threshold: number;
+  baseline: number;
+  history: DayStep[];   // includes today as the last entry
+  forecast: DayStep[];  // future days, projected moisture
+  forecastCrossesThreshold: boolean;
+  daysUntilThreshold: number | null;
+}
+
+/**
+ * Walk through the same model `recommend()` uses, but capture every day's
+ * intermediate values so the rationale modal can render the full reasoning.
+ */
+export function buildMoistureTrace(
+  crops: Crop[],
+  weather: WeatherData,
+  wateringDates: Set<string>,
+): MoistureTrace | null {
+  if (crops.length === 0) return null;
+  const hero = pickHeroCrop(crops);
+  const threshold = thresholdForCrop(hero);
+  const drain = hero.waterNeed * DAILY_DRAIN_FACTOR;
+
+  function step(day: WeatherDay, prevMoisture: number, allowWater: boolean): DayStep {
+    const r = rainScore(day.rainMm);
+    const e = evaporationLoss(day.tempMaxC, day.windKph, day.humidityPct);
+    let m = clamp01(prevMoisture + r - e - drain);
+    const watered = allowWater && wateringDates.has(day.date);
+    if (watered) m = Math.min(100, m + WATERING_BONUS);
+    return {
+      date: day.date,
+      rainMm: day.rainMm,
+      tempMaxC: day.tempMaxC,
+      windKph: day.windKph,
+      humidityPct: day.humidityPct,
+      rainScore: r,
+      evapLoss: e,
+      drain,
+      watered,
+      moistureAfter: m,
+    };
+  }
+
+  // History = past + today
+  const history: DayStep[] = [];
+  let m = BASELINE_MOISTURE;
+  for (const d of weather.historical) {
+    const s = step(d, m, true);
+    history.push(s);
+    m = s.moistureAfter;
+  }
+  const todayStep = step(weather.today, m, true);
+  history.push(todayStep);
+  m = todayStep.moistureAfter;
+
+  // Forecast = projection from today's value forward
+  const forecast: DayStep[] = [];
+  let crossed = false;
+  let daysUntil: number | null = null;
+  for (let i = 0; i < weather.forecast.length; i++) {
+    const s = step(weather.forecast[i], m, false);
+    forecast.push(s);
+    m = s.moistureAfter;
+    if (!crossed && s.moistureAfter <= threshold) {
+      crossed = true;
+      daysUntil = i + 1;
+    }
+  }
+  if (todayStep.moistureAfter <= threshold) {
+    crossed = true;
+    daysUntil = 0;
+  }
+
+  return {
+    hero,
+    threshold,
+    baseline: BASELINE_MOISTURE,
+    history,
+    forecast,
+    forecastCrossesThreshold: crossed,
+    daysUntilThreshold: daysUntil,
+  };
+}
+
 export function recommend(
   crops: Crop[],
   weather: WeatherData,

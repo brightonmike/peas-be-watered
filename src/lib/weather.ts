@@ -86,8 +86,14 @@ function aggregateToDays(hourly: OpenMeteoResponse["hourly"]): WeatherDay[] {
   return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export async function getWeather(postcode: string): Promise<WeatherData> {
-  const { lat, lon } = await geocodePostcode(postcode);
+export async function getWeather(
+  postcode: string,
+  preResolvedCoords?: { lat: number; lon: number },
+): Promise<WeatherData> {
+  // Roots Allotments sites carry their own pre-resolved coordinates, so we
+  // skip the postcode lookup entirely — fully insulated from any postcode-API
+  // outage and never burn a postcodes.io call.
+  const { lat, lon } = preResolvedCoords ?? (await geocodePostcode(postcode));
 
   // Round to 2 decimal places (~1km grid). Two postcodes in the same
   // neighbourhood will share a cache entry, multiplying our effective free-tier

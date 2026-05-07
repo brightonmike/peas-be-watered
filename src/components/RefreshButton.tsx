@@ -33,7 +33,7 @@ export default function RefreshButton() {
     <button
       onClick={() => startTransition(() => router.refresh())}
       disabled={isPending}
-      className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.18em] uppercase underline underline-offset-[3px] hover:text-[var(--color-cream)] disabled:opacity-50"
+      className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.18em] uppercase text-[var(--color-moss)] underline underline-offset-[3px] hover:text-[var(--color-cream)] disabled:opacity-50"
     >
       <RefreshIcon spinning={isPending} />
       {isPending ? "Refreshing" : "Refresh"}

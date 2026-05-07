@@ -5,7 +5,7 @@ import { getPrefsFromCookie } from "@/lib/cookies.server";
 import { getCropsByIds } from "@/lib/crops";
 import { ROOTS_LOCATION_MAP } from "@/lib/roots-locations";
 import { getWeather } from "@/lib/weather";
-import { recommend, computeCurrentMoisture, pickHeroCrop, BASELINE_MOISTURE } from "@/lib/engine";
+import { recommend, computeCurrentMoisture, pickHeroCrop, buildMoistureTrace, BASELINE_MOISTURE } from "@/lib/engine";
 import RecommendationCard from "@/components/RecommendationCard";
 import RefreshButton from "@/components/RefreshButton";
 import ExplainerModal from "@/components/ExplainerModal";
@@ -24,7 +24,10 @@ async function Scene() {
 
   let weather;
   try {
-    weather = await getWeather(prefs.postcode);
+    // For Roots sites, hand the weather fetch the coords we already store —
+    // skips the postcode lookup completely.
+    const coords = rootsLocation ? { lat: rootsLocation.lat, lon: rootsLocation.lon } : undefined;
+    weather = await getWeather(prefs.postcode, coords);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return (
@@ -50,6 +53,7 @@ async function Scene() {
     : BASELINE_MOISTURE;
 
   const recommendation = recommend(crops, weather, currentMoisture, wateredToday);
+  const trace = buildMoistureTrace(crops, weather, wateringDates);
 
   const locLabel = rootsLocation
     ? `${rootsLocation.siteName} · ${rootsLocation.city}`
@@ -130,6 +134,7 @@ async function Scene() {
             recommendation={recommendation}
             prefs={prefs}
             wateredToday={wateredToday}
+            trace={trace}
           />
 
           {/* Underground content */}
@@ -162,7 +167,7 @@ async function Scene() {
           >
             Edit beds →
           </Link>
-          <div className="flex items-center justify-between font-mono text-[10px] tracking-[0.18em] uppercase text-[var(--color-moss)]">
+          <div className="flex items-center justify-between">
             <RefreshButton />
             <ExplainerModal />
           </div>

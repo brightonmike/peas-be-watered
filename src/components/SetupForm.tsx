@@ -178,7 +178,7 @@ export default function SetupForm({ initial }: { initial?: UserPrefs }) {
               Postcode
             </label>
             <div
-              className="flex items-center gap-3 rounded-xl px-4 py-3"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 relative"
               style={{
                 background: "rgba(63, 122, 63, 0.12)",
                 border: "1px solid rgba(63, 122, 63, 0.4)",
@@ -197,7 +197,7 @@ export default function SetupForm({ initial }: { initial?: UserPrefs }) {
                 required={!selectedLocation}
               />
               {effectiveCity && (
-                <span className="font-serif italic text-[14px] text-[var(--color-cream)]/55 whitespace-nowrap">
+                <span className="font-serif italic text-[14px] text-[var(--color-cream)]/55 whitespace-nowrap absolute right-0 top-0 h-full flex items-center px-4 pointer-events-none">
                   {effectiveCity}
                 </span>
               )}

@@ -1,5 +1,7 @@
 import type { Recommendation, UserPrefs } from "@/lib/types";
+import type { MoistureTrace } from "@/lib/engine";
 import WateredButton from "@/components/WateredButton";
+import RationaleModal from "@/components/RationaleModal";
 
 const STATE_LABEL = {
   "water-today": "Today, before sundown",
@@ -29,10 +31,12 @@ export default function RecommendationCard({
   recommendation,
   prefs,
   wateredToday,
+  trace,
 }: {
   recommendation: Recommendation;
   prefs: UserPrefs;
   wateredToday: boolean;
+  trace: MoistureTrace | null;
 }) {
   const { state, daysUntil, waterOnDate, reason } = recommendation;
   const { lead, em } = headline(daysUntil, waterOnDate);
@@ -65,9 +69,10 @@ export default function RecommendationCard({
               {em}
             </span>
           </h2>
-          <p className="font-sans text-[13px] text-[var(--color-ink)]/70 mt-1.5 leading-snug">
-            {reason}
-          </p>
+          <div className="font-sans text-[13px] text-[var(--color-ink)]/70 mt-1.5 leading-snug">
+            {reason}{" "}
+            <RationaleModal trace={trace} reason={reason} />
+          </div>
         </div>
       </div>
 
